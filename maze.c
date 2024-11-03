@@ -1,13 +1,15 @@
 #include "maze.h"
 #include <ncurses.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 //#include <conio.h>
 
 void maze_print()
 {
     //Supongamos que queremos un laberinto de 5x5
-    size_t x = 9;     
-    size_t y = 9;
+    size_t x = 8;     
+    size_t y = 8;
 
     //***** Usamos ncurses.
     initscr();
@@ -40,17 +42,109 @@ void maze_print()
     wrefresh(win);
 
     
-    //***** Imprime el minotauro en el centro.
+
+    //***** Imprime el minotauro en el centro. *****//
     size_t maxX, maxY, offSetX, offSetY;
     getmaxyx(win, maxY, maxX);
 
-    // Desplazamos el minotauro si las dimensiones del laberinto son par.
-    if(x % 2 == 0) offSetX = -2; // Desplazamiento de 2 columnas a la derecha.  
-    if(y % 2 == 0) offSetY = -1; // Desplazamiento de 1 renglon hacia arriba.
+    //** Si las dimensiones del laberinto son par, desplaza aparicion del minotauro.
+    offSetX = (x % 2 == 0) ? -2 : 0;
+    offSetY = (y % 2 == 0) ? -1 : 0;
 
-    mvwprintw(win, maxY/2 + offSetY, maxX/2 + offSetX, "M"); // Imprime el minotauro.
+    //** Seleccionamos las coordenadas centrales, donde aparecera el minotauro.
+    size_t minotaurPositionX = maxX/2 + offSetX;
+    size_t minotaurPositionY = maxY/2 + offSetY;
+
+    //** Imprimimos por primera vez el minotauro.
+    mvwprintw(win, minotaurPositionY, minotaurPositionX, "M"); 
     wrefresh(win);
 
+
+
+    //***** Caminata aleatoria. *****//
+    getch();
+
+    //** Caminata aleatoria.
+    enum minotaurMovement {IZQUIERDA, DERECHA, ARRIBA, ABAJO};
+
+    srand(time(0));
+    size_t minotaurMovement;
+
+
+    //******************** HACER FUNCION minotaurTouchesBorder()
+    
+     bool minotaurTouchesBorder(WINDOW * window, size_t minotaurPosY, size_t minotaurPosX)
+     {
+	size_t maxX, maxY;
+	getmaxyx(window, maxY, maxX);
+
+	if( minotaurPosX == 2 || minotaurPosX == maxX-3 || minotaurPosY == 1 || minotaurPosY == maxY-2 ) return true;
+	
+	return false;
+     }
+
+
+    ///********************
+    
+    while( !minotaurTouchesBorder(win, minotaurPositionY, minotaurPositionX) ){ 
+        //** Elimina rastro de la posicion anterior del minotauro
+	mvwprintw(win, minotaurPositionY, minotaurPositionX, " ");
+	wrefresh(win);
+
+	//** Elige una direccion y crea el pasillo.
+	minotaurMovement = rand() % 4;
+	
+	switch(minotaurMovement)
+    	{
+            case IZQUIERDA:
+		if(minotaurPositionX > 2) 
+		{
+	            mvwprintw(win, minotaurPositionY, minotaurPositionX-2, " ");
+		    minotaurPositionX -= 4;
+		}
+		break;
+
+	    case DERECHA:
+		if(minotaurPositionX < maxX-3){
+	 	    mvwprintw(win, minotaurPositionY, minotaurPositionX+2, " ");
+		    minotaurPositionX += 4;
+		}
+		break;
+
+	    case ARRIBA:
+		if(minotaurPositionY > 1){
+		    mvwprintw(win, minotaurPositionY-1, minotaurPositionX, " ");
+	 	    minotaurPositionY -= 2;
+		}
+		break;
+
+	    case ABAJO:
+		if(minotaurPositionY < maxY-2){
+		    mvwprintw(win, minotaurPositionY+1, minotaurPositionX, " ");
+		    minotaurPositionY += 2;
+		}
+		break;
+
+	    default:
+		printw("What?");
+    	}
+
+	//** Imprime la nueva posicion del minotauro.
+	mvwprintw(win, minotaurPositionY, minotaurPositionX, "M");
+	wrefresh(win);
+	getch();
+	//napms(500);
+
+
+
+	/* DEBUG 
+	 mvwprintw(stdscr, 15, 15, "maxX: %ld", maxX);
+	mvwprintw(stdscr, 16, 15, "posX: %ld", minotaurPositionX);
+	mvwprintw(stdscr, 17, 15, "maxY: %ld", maxY);
+	mvwprintw(stdscr, 18, 15, "posY: %ld", minotaurPositionY);
+
+	*/
+    }
 
     getch();
     endwin();
